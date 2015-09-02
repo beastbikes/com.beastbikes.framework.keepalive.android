@@ -67,21 +67,30 @@ public final class KeepAliveService extends Service {
 		}
 	}
 
-	private final Handler handler;
 
-	private final HandlerThread handlerThread;
+	private HandlerThread handlerThread;
 
-	private final Thread serverThread;
+	private Thread serverThread;
+
+	private Handler handler;
 
 	private int randomCode = -1;
 
-	private String lssName = genLssName();
+	private String lssName = null;
 
 	private LocalSocket ls = null;
 
 	private LocalServerSocket lss = null;
 
-	public KeepAliveService() {
+	@Override
+	public IBinder onBind(Intent intent) {
+		return null;
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+
 		this.handlerThread = new HandlerThread("KeepAlive");
 		this.handlerThread.setDaemon(true);
 		this.handlerThread.setPriority(Thread.MIN_PRIORITY);
@@ -177,11 +186,6 @@ public final class KeepAliveService extends Service {
 		this.serverThread.setPriority(Thread.MIN_PRIORITY);
 		this.serverThread.setDaemon(true);
 		this.serverThread.start();
-	}
-
-	@Override
-	public IBinder onBind(Intent intent) {
-		return null;
 	}
 
 	private boolean copyExecFile() {
