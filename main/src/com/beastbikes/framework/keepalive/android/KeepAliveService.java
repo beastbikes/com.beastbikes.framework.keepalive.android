@@ -34,7 +34,8 @@ public final class KeepAliveService extends Service {
 
 	private static final String KEEPALIVE_EXE = "keepalive";
 
-	private static final Logger logger = LoggerFactory.getLogger(KeepAliveService.class);
+	private static final Logger logger = LoggerFactory
+			.getLogger(KeepAliveService.class);
 
 	private static String getUserHandleParam() {
 		try {
@@ -49,7 +50,7 @@ public final class KeepAliveService extends Service {
 
 		return "";
 	}
-	
+
 	private static int chmod(final String path, final int mode) {
 		Process proc = null;
 		final Locale locale = Locale.getDefault();
@@ -67,7 +68,6 @@ public final class KeepAliveService extends Service {
 		}
 	}
 
-
 	private HandlerThread handlerThread;
 
 	private Thread serverThread;
@@ -75,8 +75,6 @@ public final class KeepAliveService extends Service {
 	private Handler handler;
 
 	private int randomCode = -1;
-
-	private String lssName = null;
 
 	private LocalSocket ls = null;
 
@@ -96,22 +94,26 @@ public final class KeepAliveService extends Service {
 		this.handlerThread.setPriority(Thread.MIN_PRIORITY);
 		this.handlerThread.start();
 
-		this.handler = new Handler(this.handlerThread.getLooper(), new Handler.Callback() {
-			
-			@Override
-			public boolean handleMessage(Message msg) {
-				switch (msg.what) {
-				case MSG_START_DAEMON:
-					if (0 != startDaemon(lssName, randomCode)) {
-						return handler.sendEmptyMessageDelayed(MSG_START_DAEMON, START_DAEMON_INTERVAL);
+		this.handler = new Handler(this.handlerThread.getLooper(),
+				new Handler.Callback() {
+
+					@Override
+					public boolean handleMessage(Message msg) {
+						switch (msg.what) {
+						case MSG_START_DAEMON:
+							if (0 != startDaemon(genLssName(), randomCode)) {
+								return handler
+										.sendEmptyMessageDelayed(
+												MSG_START_DAEMON,
+												START_DAEMON_INTERVAL);
+							}
+							return true;
+						}
+
+						return false;
 					}
-					return true;
-				}
 
-				return false;
-			}
-
-		});
+				});
 
 		this.serverThread = new Thread(new Runnable() {
 
@@ -122,7 +124,7 @@ public final class KeepAliveService extends Service {
 					while (ls == null) {
 						try {
 							if (lss == null) {
-								lss = new LocalServerSocket(lssName);
+								lss = new LocalServerSocket(genLssName());
 							}
 
 							logger.trace("Connect waiting...");
@@ -143,9 +145,7 @@ public final class KeepAliveService extends Service {
 								lss = null;
 							}
 
-							lssName = genLssName();
-
-							logger.trace("Relocate lss name=%s\n", lssName);
+							logger.trace("Relocate lss name=%s\n", genLssName());
 
 							if (ls != null) {
 								try {
@@ -178,7 +178,8 @@ public final class KeepAliveService extends Service {
 
 					}
 
-					randomCode += new Random(System.currentTimeMillis()).nextInt(10) + 1;
+					randomCode += new Random(System.currentTimeMillis())
+							.nextInt(10) + 1;
 				}
 			}
 
@@ -254,7 +255,9 @@ public final class KeepAliveService extends Service {
 		final ComponentName cn = new ComponentName(this, this.getClass());
 		final String cmd = "am startservice -n " + cn.flattenToString() + " %s";
 		final String exec = String.format(cmd, getUserHandleParam());
-		final String[] params = { exe.getAbsolutePath(), lssName, String.valueOf(randomCode), exec, String.valueOf(KEEP_ALIVE_SLEEP_SECONDS), };
+		final String[] params = { exe.getAbsolutePath(), lssName,
+				String.valueOf(randomCode), exec,
+				String.valueOf(KEEP_ALIVE_SLEEP_SECONDS), };
 
 		Process p = null;
 		try {
@@ -272,7 +275,8 @@ public final class KeepAliveService extends Service {
 	}
 
 	private String genLssName() {
-		return getPackageName() + ".keepalive." + (System.currentTimeMillis() % 10000);
+		return getPackageName() + ".keepalive."
+				+ (System.currentTimeMillis() / 10000);
 	}
 
 }
